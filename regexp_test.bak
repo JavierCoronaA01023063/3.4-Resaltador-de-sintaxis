@@ -9,7 +9,7 @@
   " Identify strings containing a fixed sequence "
   ; Identify the string hello, with any combination of upper/lower case
   ;(regexp-match #px"[hH][eE][lL][lL][oO]" input-string))
-  (regexp-match* #px":\\s*\".+?\"" (file->string file-path)))
+  (regexp-match #px"\\:s*\".+?\"" (file->string file-path)))
 
 (define (get-html-output input-string)
   " Extract only the name part of a file name "
@@ -19,18 +19,6 @@
     ([matches (regexp-match #px"([\\w-]+)(\\.\\w{1,4})" input-string)])
     ; Take only the first group
     (string-append (cadr matches) ".html")))
-
-(define (find-strings file-path)
-  (define data (regexp-match* #px":\\s*\".+?\"" (file->string file-path)))
-  (let loop
-    ([lst data][result ""])
-    (if (empty? lst)
-        result
-        (loop
-          ; Iterate with the rest of the list
-          (cdr lst)
-          ; Add the first element to the result
-          (string-append result (format "<span class='~a'>~a</span>" "string" (car lst)) "\n")))))
 
 (define (read-file in-file-path)
   (call-with-input-file in-file-path
@@ -57,6 +45,5 @@
 
 (define (main in-file-path)
   (define data (read-file in-file-path))
-  (define result (list (format (file->string "regexp_site.html") (find-strings in-file-path))))
+  (define result (list (format (file->string "regexp_site.html") data)))
   (write-file (get-html-output in-file-path) result))
-
