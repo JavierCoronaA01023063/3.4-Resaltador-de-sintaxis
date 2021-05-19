@@ -1,0 +1,23 @@
+.punctuation{
+	color: #d4dde8;
+}
+
+.object-key{
+	color: #7bbbe2;
+}
+
+.string{
+	color: #e9e337;
+}
+
+.number{
+	color: #00ff01;
+}
+
+.reserved-word{
+	color: #da9561;
+}
+
+body{
+background-color: black;
+}
