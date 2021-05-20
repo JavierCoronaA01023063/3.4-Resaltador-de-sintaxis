@@ -20,43 +20,27 @@
     ; Take only the first group
     (string-append (cadr matches) ".html")))
 
-(define (find-strings string)
-  (define result (regexp-match #px":\\s*(\".+?\")" string))
-  (format "<span class='~a'>~a</span>" "string" (car result)))
-
-(define (find-object-keys string)
-  (define result (regexp-match #px"(\".+?\")\\s*:" string))
-  (format "<span class='~a'>~a</span>" "object-key" (car result)))
-
-(define (find-numbers string)
-  (define result (regexp-match #px"-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?" string))
-  (format "<span class='~a'>~a</span>" "number" (car result)))
-
-(define (find-punctuation string)
-  (define result (regexp-match #px"[:[\\]{}]" string))
-  (format "<span class='~a'>~a</span>" "punctuation" (car result)))
-
-(define (find-reserved-words string)
-  (define result (regexp-match #px"true|null|false" string))
-  (format "<span class='~a'>~a</span>" "reserved-word" (car result)))
-
+(define (generate-span string type)
+  (format "<span class='~a'>~a</span>" type string))
 
 (define (convert-html in-file-path)
   (define file (file->string in-file-path))
-  
   (let loop
     ([result ""][file file])
     (if (non-empty-string? file)
-        (define token
+        (let
+            ([token
         (cond
-          [(regexp-match #px":\\s*(\".+?\")" file)(list (regexp-match #px":\\s*(\".+?\")" file) "string")]
-          [(regexp-match #px"(\".+?\")\\s*:" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
-          [(regexp-match #px"-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
-          [(regexp-match #px"[:[\\]{}]" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
-          [(regexp-match #px"true|null|false" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
-          ))
-        (loop (string-append result (fun)) (substring file (length (car token))))
-        result)))
+          [(regexp-match #px"^(\"[\\w]+?\")\\s*:" file) (list (cadr (regexp-match #px"^(\"[\\w]+?\")\\s*:" file)) "object-key")]
+          [(regexp-match #px"^(\"[a-zA-Z]*\\:?(\\s[A-Z]\\.)?(\\s[a-zA-Z]*)?\")" file)(list (cadr (regexp-match #px"^(\"[a-zA-Z]*\\:?(\\s[A-Z]\\.)?(\\s[a-zA-Z]*)?\")" file)) "string")]
+          [(regexp-match #px"^[:[\\]{},]" file) (list (car (regexp-match #px"^[:[\\]{},]" file)) "punctuation")]
+          [(regexp-match #px"^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?" file) (list (car (regexp-match #px"^-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?" file)) "number")]
+          [(regexp-match #px"^(true|null|false)" file) (list (cadr (regexp-match #px"^(true|null|false)" file)) "reserved-word")]
+          [(regexp-match #px"^\\s+" file) (list (car (regexp-match #px"^\\s+" file)) "space")]
+          )])
+        (loop (string-append result (generate-span (car token) (cadr token))) (substring file (string-length (car token)))))
+        result
+        )))
     
     
   
