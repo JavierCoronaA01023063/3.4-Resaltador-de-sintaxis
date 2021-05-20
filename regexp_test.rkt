@@ -20,28 +20,46 @@
     ; Take only the first group
     (string-append (cadr matches) ".html")))
 
-(define (find-strings file-path)
-  (define data (regexp-match* #px":\\s*\".+?\"" (file->string file-path)))
+(define (find-strings string)
+  (define result (regexp-match #px":\\s*(\".+?\")" string))
+  (format "<span class='~a'>~a</span>" "string" (car result)))
+
+(define (find-object-keys string)
+  (define result (regexp-match #px"(\".+?\")\\s*:" string))
+  (format "<span class='~a'>~a</span>" "object-key" (car result)))
+
+(define (find-numbers string)
+  (define result (regexp-match #px"-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?" string))
+  (format "<span class='~a'>~a</span>" "number" (car result)))
+
+(define (find-punctuation string)
+  (define result (regexp-match #px"[:[\\]{}]" string))
+  (format "<span class='~a'>~a</span>" "punctuation" (car result)))
+
+(define (find-reserved-words string)
+  (define result (regexp-match #px"true|null|false" string))
+  (format "<span class='~a'>~a</span>" "reserved-word" (car result)))
+
+
+(define (convert-html in-file-path)
+  (define file (file->string in-file-path))
+  
   (let loop
-    ([lst data][result ""])
-    (if (empty? lst)
-        result
-        (loop
-          ; Iterate with the rest of the list
-          (cdr lst)
-          ; Add the first element to the result
-          (string-append result (format "<span class='~a'>~a</span>" "string" (car lst)) "\n")))))
-
-(define (read-file in-file-path)
-  (call-with-input-file in-file-path
-    (lambda (in)
-      (let loop
-        ([line (read-line in)]
-         [result empty])
-        (if (eof-object? line)
-            result
-            (loop (read-line in) (append result (list line))))))))
-
+    ([result ""][file file])
+    (if (non-empty-string? file)
+        (define token
+        (cond
+          [(regexp-match #px":\\s*(\".+?\")" file)(list (regexp-match #px":\\s*(\".+?\")" file) "string")]
+          [(regexp-match #px"(\".+?\")\\s*:" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
+          [(regexp-match #px"-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
+          [(regexp-match #px"[:[\\]{}]" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
+          [(regexp-match #px"true|null|false" file) (list (regexp-match #px":\\s*(\".+?\")" file) "string")]
+          ))
+        (loop (string-append result (fun)) (substring file (length (car token))))
+        result)))
+    
+    
+  
 
 (define (write-file out-file-path data)
   (call-with-output-file out-file-path
@@ -56,7 +74,6 @@
 
 
 (define (main in-file-path)
-  (define data (read-file in-file-path))
-  (define result (list (format (file->string "regexp_site.html") (find-strings in-file-path))))
+  (define result (list (format (file->string "regexp_site.html") (convert-html in-file-path))))
   (write-file (get-html-output in-file-path) result))
 
